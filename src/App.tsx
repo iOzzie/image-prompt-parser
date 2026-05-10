@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Dropzone } from './components/Dropzone';
 import { MetadataViewer } from './components/MetadataViewer';
 import { extractPngMetadata } from './utils/pngParser';

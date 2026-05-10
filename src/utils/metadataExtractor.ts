@@ -102,7 +102,8 @@ export const extractFriendlyData = (metadata: Record<string, any>): FriendlyMeta
 
     // 1. Trace from any node that takes 'positive' or 'negative' inputs (like KSampler)
     const conditioningNodes = Object.values(promptObj).filter((n: any) => n?.inputs?.positive || n?.inputs?.negative);
-    for (const node of conditioningNodes) {
+    for (const n of conditioningNodes) {
+      const node = n as any;
       const posId = Array.isArray(node.inputs?.positive) ? node.inputs.positive[0] : null;
       const negId = Array.isArray(node.inputs?.negative) ? node.inputs.negative[0] : null;
 
