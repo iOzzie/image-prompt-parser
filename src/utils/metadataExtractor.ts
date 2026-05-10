@@ -14,7 +14,7 @@ export const extractFriendlyData = (metadata: Record<string, any>): FriendlyMeta
   if (metadata.prompt && typeof metadata.prompt === 'object') {
     result.isRecognized = true;
     result.generator = 'ComfyUI';
-    
+
     const promptObj = metadata.prompt;
     let mainSampler: any = null;
     let ckptNode: any = null;
@@ -23,7 +23,7 @@ export const extractFriendlyData = (metadata: Record<string, any>): FriendlyMeta
     for (const key in promptObj) {
       const node = promptObj[key];
       if (!node?.class_type) continue;
-      
+
       if (!mainSampler && (node.class_type.includes('Sampler') || node.class_type === 'KSampler')) {
         mainSampler = node;
       }
@@ -105,7 +105,7 @@ export const extractFriendlyData = (metadata: Record<string, any>): FriendlyMeta
     for (const node of conditioningNodes) {
       const posId = Array.isArray(node.inputs?.positive) ? node.inputs.positive[0] : null;
       const negId = Array.isArray(node.inputs?.negative) ? node.inputs.negative[0] : null;
-      
+
       if (posId) posTexts = posTexts.concat(findClipTexts(String(posId), 'positive'));
       if (negId) negTexts = negTexts.concat(findClipTexts(String(negId), 'negative'));
     }
@@ -133,11 +133,11 @@ export const extractFriendlyData = (metadata: Record<string, any>): FriendlyMeta
         if (typeof n.inputs?.text === 'string') fallbackTexts.push(n.inputs.text);
         if (typeof n.inputs?.text_g === 'string') fallbackTexts.push(n.inputs.text_g);
       }
-      
+
       const uniqueFallback = [...new Set(fallbackTexts)]
         .map(t => t.trim())
         .filter(t => t && t !== result.positivePrompt && t !== result.negativePrompt);
-      
+
       if (!result.positivePrompt && uniqueFallback.length >= 1) {
         result.positivePrompt = uniqueFallback[0];
         uniqueFallback.shift(); // Remove it so negative doesn't grab it too
@@ -151,44 +151,44 @@ export const extractFriendlyData = (metadata: Record<string, any>): FriendlyMeta
     // If the prompt is completely missing from the execution graph (e.g., hidden in a disconnected custom node or UI-only 'workflow' object)
     if (!result.positivePrompt || !result.negativePrompt) {
       const allStrings = new Set<string>();
-      
+
       const scanObject = (obj: any) => {
-         if (typeof obj === 'string') {
-            const trimmed = obj.trim();
-            // Filter out system strings, code, paths, or JSON strings
-            if (trimmed.length > 15 
-                && !trimmed.match(/\.(safetensors|ckpt|pt|pth|bin)$/i)
-                && !trimmed.includes('function(')
-                && !trimmed.startsWith('import ')
-                && !trimmed.startsWith('{')
-                && !trimmed.startsWith('[')) {
-               allStrings.add(trimmed);
-            }
-         } else if (typeof obj === 'object' && obj !== null) {
-            Object.values(obj).forEach(scanObject);
-         }
+        if (typeof obj === 'string') {
+          const trimmed = obj.trim();
+          // Filter out system strings, code, paths, or JSON strings
+          if (trimmed.length > 15
+            && !trimmed.match(/\.(safetensors|ckpt|pt|pth|bin)$/i)
+            && !trimmed.includes('function(')
+            && !trimmed.startsWith('import ')
+            && !trimmed.startsWith('{')
+            && !trimmed.startsWith('[')) {
+            allStrings.add(trimmed);
+          }
+        } else if (typeof obj === 'object' && obj !== null) {
+          Object.values(obj).forEach(scanObject);
+        }
       };
-      
+
       // Scan both the execution prompt and the UI workflow representation
       scanObject(metadata.prompt);
       scanObject(metadata.workflow);
-      
-      const candidates = [...allStrings].filter(s => 
-         s !== result.positivePrompt && 
-         s !== result.negativePrompt && 
-         s !== result.modelName
+
+      const candidates = [...allStrings].filter(s =>
+        s !== result.positivePrompt &&
+        s !== result.negativePrompt &&
+        s !== result.modelName
       );
-      
+
       // Sort by length, longest first (prompts are usually the longest strings in the file)
       candidates.sort((a, b) => b.length - a.length);
-      
+
       if (!result.positivePrompt && candidates.length > 0) {
-         result.positivePrompt = candidates[0];
-         candidates.shift();
+        result.positivePrompt = candidates[0];
+        candidates.shift();
       }
-      
+
       if (!result.negativePrompt && candidates.length > 0) {
-         result.negativePrompt = candidates[0];
+        result.negativePrompt = candidates[0];
       }
     }
 
@@ -203,15 +203,15 @@ export const extractFriendlyData = (metadata: Record<string, any>): FriendlyMeta
   if (metadata.parameters && typeof metadata.parameters === 'string') {
     result.isRecognized = true;
     result.generator = 'A1111/WebUI';
-    
+
     const paramsString = metadata.parameters;
     const parts = paramsString.split('\nNegative prompt:');
-    
+
     if (parts.length > 1) {
       result.positivePrompt = parts[0].trim();
       const nextParts = parts[1].split('\nSteps:');
       result.negativePrompt = nextParts[0].trim();
-      
+
       if (nextParts.length > 1) {
         const paramStr = 'Steps:' + nextParts[1];
         result.generationParams = {};
@@ -226,7 +226,7 @@ export const extractFriendlyData = (metadata: Record<string, any>): FriendlyMeta
       // Just a simple prompt maybe?
       result.positivePrompt = paramsString.trim();
     }
-    
+
     return result;
   }
 
